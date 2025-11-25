@@ -16,6 +16,7 @@ class ChuckerHttpLoggingInterceptor implements Interceptor {
 
     var bytes = '';
     if (requestBase is http.Request) {
+      // ignore: unnecessary_cast - Cast is required for http 1.6.0+ compatibility
       final req = requestBase as http.Request;
       final body = req.body;
       if (body.isNotEmpty) {

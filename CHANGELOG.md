@@ -189,6 +189,17 @@
 
 **Full Changelog**: https://github.com/syedmurtaza108/chucker-flutter/compare/v1.8.2...v1.8.4
 
+## 1.8.6
+
+## What's Changed
+* fix: Fixed compatibility issue with http package 1.6.0+ by properly casting BaseRequest to Request before accessing body and bodyBytes properties in http_logging_interceptor by @gktirkha in https://github.com/syedmurtaza108/chucker-flutter/pull/132
+* chore(deps): update dependency very_good_analysis to v10 in https://github.com/syedmurtaza108/chucker-flutter/pull/133
+
+## New Contributors
+* @gktirkha made their first contribution in https://github.com/syedmurtaza108/chucker-flutter/pull/132
+
+**Full Changelog**: https://github.com/syedmurtaza108/chucker-flutter/compare/v1.8.5...v1.8.6
+
 ## 1.8.5
 
 ## What's Changed
