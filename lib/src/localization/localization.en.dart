@@ -66,4 +66,5 @@ const _en = {
   'tree': 'Tree',
   'text': 'Text',
   'imageCouldNotBeLoaded': 'Image could not be loaded',
+  'exportAll': 'Export all',
 };

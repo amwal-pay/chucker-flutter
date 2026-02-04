@@ -60,4 +60,5 @@ const _ur = {
   'tree': 'شجری',
   'text': 'تحریری',
   'imageCouldNotBeLoaded': 'تصویر نہیں ظاہر کی جاسکی',
+  'exportAll': 'سب برآمد کریں',
 };

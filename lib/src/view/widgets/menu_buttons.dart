@@ -8,6 +8,7 @@ class MenuButtons extends StatelessWidget {
     required this.enableDelete,
     required this.onDelete,
     required this.onSettings,
+    required this.onExportAll,
     Key? key,
   }) : super(key: key);
 
@@ -20,6 +21,9 @@ class MenuButtons extends StatelessWidget {
   ///Callback when settings pressed
   final VoidCallback onSettings;
 
+  ///Callback when export all requests pressed
+  final VoidCallback onExportAll;
+
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<int>(
@@ -28,6 +32,8 @@ class MenuButtons extends StatelessWidget {
           onDelete();
         } else if (value == 1) {
           onSettings();
+        } else if (value == 2) {
+          onExportAll();
         }
       },
       itemBuilder: (_) => [
@@ -36,6 +42,11 @@ class MenuButtons extends StatelessWidget {
           enabled: enableDelete,
           key: const ValueKey('menu_delete'),
           child: Text(Localization.strings['delete']!),
+        ),
+        PopupMenuItem(
+          value: 2,
+          key: const ValueKey('menu_export_all'),
+          child: Text(Localization.strings['exportAll']!),
         ),
         PopupMenuItem(
           value: 1,

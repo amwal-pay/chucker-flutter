@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:chucker_flutter/src/helpers/shared_preferences_manager.dart';
 import 'package:chucker_flutter/src/localization/localization.dart';
 import 'package:chucker_flutter/src/models/api_response.dart';
@@ -12,6 +15,8 @@ import 'package:chucker_flutter/src/view/widgets/confirmation_dialog.dart';
 import 'package:chucker_flutter/src/view/widgets/filter_buttons.dart';
 import 'package:chucker_flutter/src/view/widgets/menu_buttons.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 ///The main screen of `chucker_flutter`
 class ChuckerPage extends StatefulWidget {
@@ -58,7 +63,13 @@ class _ChuckerPageState extends State<ChuckerPage> {
   Widget build(_) {
     return Scaffold(
       appBar: ChuckerAppBar(
-        onBackPressed: () => ChuckerFlutter.navigatorObserver.navigator?.pop(),
+        onBackPressed: () {
+          final navigator = ChuckerFlutter.navigatorObserver.navigator ??
+              Navigator.maybeOf(context);
+          if (navigator != null && navigator.canPop()) {
+            navigator.pop();
+          }
+        },
         actions: [
           Theme(
             data: ThemeData(
@@ -78,6 +89,7 @@ class _ChuckerPageState extends State<ChuckerPage> {
             enableDelete: _selectedApis.isNotEmpty,
             onDelete: _deleteAllSelected,
             onSettings: _openSettings,
+            onExportAll: _exportAllRequests,
           ),
         ],
       ),
@@ -266,6 +278,39 @@ class _ChuckerPageState extends State<ChuckerPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportAllRequests() async {
+    final manager = SharedPreferencesManager.getInstance();
+    final apis = await manager.getAllApiResponses();
+    if (apis.isEmpty) {
+      final navigator = ChuckerFlutter.navigatorObserver.navigator;
+      if (navigator != null && navigator.context.mounted) {
+        ScaffoldMessenger.of(navigator.context).showSnackBar(
+          const SnackBar(content: Text('No requests to export')),
+        );
+      }
+      return;
+    }
+    final list = apis.map((e) => e.toJson()).toList();
+    final jsonString = const JsonEncoder.withIndent('  ').convert(list);
+    try {
+      final dir = await getTemporaryDirectory();
+      final file = File(
+          '${dir.path}/chucker_export_${DateTime.now().millisecondsSinceEpoch}.json');
+      await file.writeAsString(jsonString);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Chucker export: ${apis.length} request(s)',
+      );
+    } catch (e) {
+      final navigator = ChuckerFlutter.navigatorObserver.navigator;
+      if (navigator != null && navigator.context.mounted) {
+        ScaffoldMessenger.of(navigator.context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    }
   }
 
   void _openDetails(ApiResponse api) {
