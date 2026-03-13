@@ -314,14 +314,21 @@ class _ChuckerPageState extends State<ChuckerPage> {
   }
 
   void _openDetails(ApiResponse api) {
-    ChuckerFlutter.navigatorObserver.navigator?.push(
-      MaterialPageRoute<void>(
-        builder: (_) => Theme(
-          data: ThemeData.light(useMaterial3: false),
-          child: ApiDetailsPage(api: api),
+    // Use the navigator that is currently showing this ChuckerPage (e.g. when
+    // Chucker was pushed directly without navigatorObserver). Fall back to
+    // the observer's navigator when Chucker was opened via showChuckerScreen().
+    final navigator = Navigator.maybeOf(context) ??
+        ChuckerFlutter.navigatorObserver.navigator;
+    if (navigator != null && navigator.mounted) {
+      navigator.push(
+        MaterialPageRoute<void>(
+          builder: (_) => Theme(
+            data: ThemeData.light(useMaterial3: false),
+            child: ApiDetailsPage(api: api),
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
 
