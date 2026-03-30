@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chucker_flutter/chucker_flutter.dart';
 import 'package:dio/dio.dart';
+import 'package:example/app_performance_theme.dart';
 import 'package:example/chopper/chopper_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -20,10 +21,13 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       navigatorObservers: [ChuckerFlutter.navigatorObserver],
-      theme: ThemeData(
-        appBarTheme: const AppBarTheme(color: Color(0xFF13B9FF)),
-        colorScheme: ColorScheme.fromSwatch(
-          accentColor: const Color(0xFF13B9FF),
+      builder: chuckerExamplePerformanceBuilder,
+      theme: applyChuckerExamplePerformanceTheme(
+        ThemeData(
+          appBarTheme: const AppBarTheme(color: Color(0xFF13B9FF)),
+          colorScheme: ColorScheme.fromSwatch(
+            accentColor: const Color(0xFF13B9FF),
+          ),
         ),
       ),
       home: const TodoPage(),
