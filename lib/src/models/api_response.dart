@@ -25,6 +25,7 @@ class ApiResponse {
     required this.sendTimeout,
     required this.checked,
     required this.clientLibrary,
+    this.encryptedRequest,
   });
 
   /// Mocked instance of [ApiResponse]. ***ONLY FOR TESTING****
@@ -68,6 +69,7 @@ class ApiResponse {
         queryParameters: _parseMap(json['queryParameters']),
         receiveTimeout: json['receiveTimeout'] as int,
         request: json['request'] as dynamic,
+        encryptedRequest: json['encryptedRequest'] as dynamic,
         requestSize: (json['requestSize'] as num).toDouble(),
         requestTime: DateTime.parse(json['requestTime'] as String),
         responseSize: (json['responseSize'] as num).toDouble(),
@@ -120,8 +122,13 @@ class ApiResponse {
   /// Size of response data
   final double responseSize;
 
-  /// Request data
+  /// Request data (plain / pre-encryption)
   final dynamic request;
+
+  /// Encrypted form of the request body, when the request was encrypted before
+  /// being sent (e.g. RSA / AES-GCM payload encryption).  Null when the request
+  /// was not encrypted or when both forms are identical.
+  final dynamic encryptedRequest;
 
   /// Response data
   final dynamic body;
@@ -208,6 +215,7 @@ class ApiResponse {
       'queryParameters': queryParameters,
       'receiveTimeout': receiveTimeout,
       'request': request,
+      if (encryptedRequest != null) 'encryptedRequest': encryptedRequest,
       'requestSize': requestSize,
       'requestTime': requestTime.toIso8601String(),
       'responseSize': responseSize,
@@ -233,6 +241,7 @@ class ApiResponse {
     double? requestSize,
     double? responseSize,
     dynamic request,
+    dynamic encryptedRequest,
     String? response,
     dynamic body,
     String? contentType,
@@ -259,6 +268,7 @@ class ApiResponse {
       queryParameters: queryParameters ?? this.queryParameters,
       receiveTimeout: receiveTimeout ?? this.receiveTimeout,
       request: request ?? this.request,
+      encryptedRequest: encryptedRequest ?? this.encryptedRequest,
       requestSize: requestSize ?? this.requestSize,
       requestTime: requestTime ?? this.requestTime,
       responseSize: responseSize ?? this.responseSize,
@@ -307,6 +317,12 @@ $prettyJson''';
   /// Formatted JSON request string
   String get prettyJsonRequest {
     return const JsonEncoder.withIndent('     ').convert(request);
+  }
+
+  /// Formatted JSON encrypted request string (empty when no encryption was used)
+  String get prettyJsonEncryptedRequest {
+    if (encryptedRequest == null) return '';
+    return const JsonEncoder.withIndent('     ').convert(encryptedRequest);
   }
 
   @override

@@ -269,7 +269,7 @@ class _ResponseTab extends StatelessWidget {
   }
 }
 
-class _RequestTab extends StatelessWidget {
+class _RequestTab extends StatefulWidget {
   const _RequestTab({
     required this.apiResponse,
     required this.jsonPreviewType,
@@ -284,6 +284,21 @@ class _RequestTab extends StatelessWidget {
   final String prettyJson;
   final _JsonPreviewType jsonPreviewType;
   final VoidCallback onShufflePreview;
+
+  @override
+  State<_RequestTab> createState() => _RequestTabState();
+}
+
+class _RequestTabState extends State<_RequestTab> {
+  bool _showEncrypted = false;
+
+  bool get _hasEncrypted => widget.apiResponse.encryptedRequest != null;
+
+  dynamic get _currentJson =>
+      _showEncrypted ? widget.apiResponse.encryptedRequest : widget.json;
+
+  String get _currentPrettyJson =>
+      _showEncrypted ? widget.apiResponse.prettyJsonEncryptedRequest : widget.prettyJson;
 
   @override
   Widget build(BuildContext context) {
@@ -302,10 +317,21 @@ class _RequestTab extends StatelessWidget {
               ),
             ],
           ),
-          child: _PreviewModeControl(
-            jsonPreviewType: jsonPreviewType,
-            onCopyPressed: _copyJsonRequest,
-            onPreviewPressed: onShufflePreview,
+          child: Column(
+            children: [
+              _PreviewModeControl(
+                jsonPreviewType: widget.jsonPreviewType,
+                onCopyPressed: _copyJsonRequest,
+                onPreviewPressed: widget.onShufflePreview,
+              ),
+              if (_hasEncrypted) ...[
+                const SizedBox(height: 6),
+                _EncryptionToggle(
+                  showEncrypted: _showEncrypted,
+                  onToggle: (v) => setState(() => _showEncrypted = v),
+                ),
+              ],
+            ],
           ),
         ),
         Expanded(
@@ -319,23 +345,94 @@ class _RequestTab extends StatelessWidget {
   }
 
   void _copyJsonRequest() {
-    Clipboard.setData(ClipboardData(text: prettyJson));
+    Clipboard.setData(ClipboardData(text: _currentPrettyJson));
   }
 
   Widget _renderJsonWidget(BuildContext context) {
-    switch (jsonPreviewType) {
+    switch (widget.jsonPreviewType) {
       case _JsonPreviewType.tree:
-        return JsonTree(json: json);
+        return JsonTree(json: _currentJson);
       case _JsonPreviewType.text:
         return SizedBox(
           width: double.maxFinite,
           child: SelectableText(
-            prettyJson,
+            _currentPrettyJson,
             style: context.textTheme.bodyLarge,
             textDirection: TextDirection.ltr,
           ),
         );
     }
+  }
+}
+
+class _EncryptionToggle extends StatelessWidget {
+  const _EncryptionToggle({
+    required this.showEncrypted,
+    required this.onToggle,
+    Key? key,
+  }) : super(key: key);
+
+  final bool showEncrypted;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          'Body:',
+          style: context.textTheme.bodyMedium!.toBold().withColor(primaryColor),
+        ),
+        const SizedBox(width: 8),
+        _TabChip(
+          label: 'Plain',
+          selected: !showEncrypted,
+          onTap: () => onToggle(false),
+        ),
+        const SizedBox(width: 6),
+        _TabChip(
+          label: 'Encrypted',
+          selected: showEncrypted,
+          onTap: () => onToggle(true),
+        ),
+      ],
+    );
+  }
+}
+
+class _TabChip extends StatelessWidget {
+  const _TabChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    Key? key,
+  }) : super(key: key);
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? primaryColor : Colors.transparent,
+          border: Border.all(color: primaryColor),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: context.textTheme.bodySmall!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: selected ? Colors.white : primaryColor,
+          ),
+        ),
+      ),
+    );
   }
 }
 

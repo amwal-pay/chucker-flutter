@@ -81,6 +81,10 @@ class ChuckerDioInterceptor extends Interceptor {
   }
 
   Future<void> _saveResponse(Response<dynamic> response) async {
+    final plainBody = response.requestOptions.extra[_kChuckerOriginalBody];
+    final actualBody = _separateFileObjects(response.requestOptions).data;
+    final hasEncryption = plainBody != null && plainBody != actualBody;
+
     await SharedPreferencesManager.getInstance().addApiResponse(
       ApiResponse(
         body: response.data,
@@ -97,8 +101,8 @@ class ChuckerDioInterceptor extends Interceptor {
             response.requestOptions.queryParameters.cast<String, dynamic>(),
         receiveTimeout:
             response.requestOptions.receiveTimeout?.inMilliseconds ?? 0,
-        request: response.requestOptions.extra[_kChuckerOriginalBody] ??
-            _separateFileObjects(response.requestOptions).data,
+        request: plainBody ?? actualBody,
+        encryptedRequest: hasEncryption ? actualBody : null,
         requestSize: 2,
         requestTime: _requestTime,
         responseSize: 2,
@@ -120,6 +124,10 @@ class ChuckerDioInterceptor extends Interceptor {
   }
 
   Future<void> _saveError(DioException response) async {
+    final plainBody = response.requestOptions.extra[_kChuckerOriginalBody];
+    final actualBody = _separateFileObjects(response.requestOptions).data;
+    final hasEncryption = plainBody != null && plainBody != actualBody;
+
     await SharedPreferencesManager.getInstance().addApiResponse(
       ApiResponse(
         body: _getJson(response.response.toString()),
@@ -136,8 +144,8 @@ class ChuckerDioInterceptor extends Interceptor {
             response.requestOptions.queryParameters.cast<String, dynamic>(),
         receiveTimeout:
             response.requestOptions.receiveTimeout?.inMilliseconds ?? 0,
-        request: response.requestOptions.extra[_kChuckerOriginalBody] ??
-            _separateFileObjects(response.requestOptions).data,
+        request: plainBody ?? actualBody,
+        encryptedRequest: hasEncryption ? actualBody : null,
         requestSize: 2,
         requestTime: _requestTime,
         responseSize: 2,
