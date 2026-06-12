@@ -7,6 +7,8 @@ import 'package:chucker_flutter/src/models/api_response.dart';
 import 'package:chucker_flutter/src/view/helper/chucker_ui_helper.dart';
 import 'package:dio/dio.dart';
 
+const _kChuckerOriginalBody = '_chuckerOriginalBody';
+
 ///[ChuckerDioInterceptor] adds support for `chucker_flutter` in [Dio] library.
 class ChuckerDioInterceptor extends Interceptor {
   late DateTime _requestTime;
@@ -16,6 +18,9 @@ class ChuckerDioInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     _requestTime = DateTime.now();
+    // Preserve any pre-encryption body the datasource injected via Options.extra;
+    // otherwise snapshot whatever the body is at this point in the chain.
+    options.extra.putIfAbsent(_kChuckerOriginalBody, () => options.data);
     handler.next(options);
   }
 
@@ -92,7 +97,8 @@ class ChuckerDioInterceptor extends Interceptor {
             response.requestOptions.queryParameters.cast<String, dynamic>(),
         receiveTimeout:
             response.requestOptions.receiveTimeout?.inMilliseconds ?? 0,
-        request: _separateFileObjects(response.requestOptions).data,
+        request: response.requestOptions.extra[_kChuckerOriginalBody] ??
+            _separateFileObjects(response.requestOptions).data,
         requestSize: 2,
         requestTime: _requestTime,
         responseSize: 2,
@@ -130,7 +136,8 @@ class ChuckerDioInterceptor extends Interceptor {
             response.requestOptions.queryParameters.cast<String, dynamic>(),
         receiveTimeout:
             response.requestOptions.receiveTimeout?.inMilliseconds ?? 0,
-        request: _separateFileObjects(response.requestOptions).data,
+        request: response.requestOptions.extra[_kChuckerOriginalBody] ??
+            _separateFileObjects(response.requestOptions).data,
         requestSize: 2,
         requestTime: _requestTime,
         responseSize: 2,
