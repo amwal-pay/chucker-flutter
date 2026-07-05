@@ -297,8 +297,9 @@ class _RequestTabState extends State<_RequestTab> {
   dynamic get _currentJson =>
       _showEncrypted ? widget.apiResponse.encryptedRequest : widget.json;
 
-  String get _currentPrettyJson =>
-      _showEncrypted ? widget.apiResponse.prettyJsonEncryptedRequest : widget.prettyJson;
+  String get _currentPrettyJson => _showEncrypted
+      ? widget.apiResponse.prettyJsonEncryptedRequest
+      : widget.prettyJson;
 
   @override
   Widget build(BuildContext context) {
@@ -326,9 +327,20 @@ class _RequestTabState extends State<_RequestTab> {
               ),
               if (_hasEncrypted) ...[
                 const SizedBox(height: 6),
-                _EncryptionToggle(
-                  showEncrypted: _showEncrypted,
-                  onToggle: (v) => setState(() => _showEncrypted = v),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _EncryptionToggle(
+                        showEncrypted: _showEncrypted,
+                        onToggle: (v) => setState(() => _showEncrypted = v),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _copyCurlForSelectedBody(context),
+                      icon: const Icon(Icons.terminal, size: 16),
+                      label: const Text('Copy cURL'),
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -346,6 +358,32 @@ class _RequestTabState extends State<_RequestTab> {
 
   void _copyJsonRequest() {
     Clipboard.setData(ClipboardData(text: _currentPrettyJson));
+  }
+
+  // Copies the curl command for whichever body is currently selected via the
+  // Plain/Encrypted toggle, so the clipboard content always matches what's
+  // on screen.
+  void _copyCurlForSelectedBody(BuildContext context) {
+    Clipboard.setData(
+      ClipboardData(
+        text: widget.apiResponse.toCurl(useEncrypted: _showEncrypted),
+      ),
+    );
+    final messenger = ScaffoldMessenger.of(context);
+    // Hide any snackbar still animating out from a previous tap so the new
+    // message (matching the just-copied body) shows immediately instead of
+    // queuing behind it.
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          _showEncrypted
+              ? 'Copied cURL with encrypted body'
+              : 'Copied cURL with plain body',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Widget _renderJsonWidget(BuildContext context) {

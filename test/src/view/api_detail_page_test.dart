@@ -219,4 +219,42 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('api_detail_copy')));
     },
   );
+
+  testWidgets(
+    'When Copy cURL is pressed in Request tab, it should copy the body '
+    'matching the selected Plain/Encrypted toggle',
+    (WidgetTester tester) async {
+      final api = ApiResponse.mock().copyWith(
+        method: 'POST',
+        request: {'TerminalPublicKey': 'plain-key'},
+        encryptedRequest: {'cipherText': 'encrypted-blob'},
+      );
+
+      await tester.pumpWidget(MaterialApp(home: ApiDetailsPage(api: api)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('REQUEST'));
+      await tester.pumpAndSettle();
+
+      // Default toggle state is Plain.
+      await tester.tap(find.text('Copy cURL'));
+      await tester.pump();
+      expect(find.text('Copied cURL with plain body'), findsOneWidget);
+
+      // Switch to Encrypted and copy again. hideCurrentSnackBar()'s dismiss
+      // transition needs real elapsed time (not just a frame) before the
+      // new SnackBar's text replaces the old one.
+      await tester.tap(find.text('Encrypted'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Copy cURL'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Copied cURL with encrypted body'), findsOneWidget);
+      expect(find.text('Copied cURL with plain body'), findsNothing);
+
+      // Settle so no pending SnackBar timers leak into the next test.
+      await tester.pumpAndSettle();
+    },
+  );
 }

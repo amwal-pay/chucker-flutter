@@ -167,7 +167,16 @@ class ApiResponse {
   final String clientLibrary;
 
   /// Converts this response to CURL representation.
-  String toCurl() {
+  ///
+  /// [useEncrypted] selects which body to replay:
+  /// - `null` (default): the actual wire body, i.e. `encryptedRequest` when
+  ///   the request was encrypted, otherwise `request`. This reproduces the
+  ///   real network call.
+  /// - `true`: force the encrypted body (`encryptedRequest`), falling back
+  ///   to `request` when there's no encrypted variant.
+  /// - `false`: force the pre-encryption debug body (`request`), letting
+  ///   callers copy the plain payload even when encryption was used.
+  String toCurl({bool? useEncrypted}) {
     // ignore: omit_local_variable_types
     final List<String> components = ['curl -i'];
 
@@ -181,8 +190,14 @@ class ApiResponse {
       }
     });
 
-    if (request != null && request.toString().isNotEmpty) {
-      final encodedBody = request.toString().replaceAll('"', r'\"');
+    // `request` is the pre-encryption debug copy (see ChuckerDioInterceptor);
+    // `encryptedRequest`, when present, is what was actually sent over the
+    // wire. Default to replaying the real request body, not the plaintext
+    // used only for the Plain/Encrypted debug toggle.
+    final actualRequestBody =
+        useEncrypted == false ? request : (encryptedRequest ?? request);
+    if (actualRequestBody != null && actualRequestBody.toString().isNotEmpty) {
+      final encodedBody = actualRequestBody.toString().replaceAll('"', r'\"');
       components.add('-d "$encodedBody"');
     }
 

@@ -158,4 +158,39 @@ void main() {
     final mockedResponse = getMockedResponse().copyWith(requestTime: now);
     expect(mockedResponse.hashCode, now.millisecondsSinceEpoch);
   });
+
+  test(
+    'toCurl should use the encrypted/actual wire body, not the pre-encryption '
+    'debug copy, when the request payload was encrypted',
+    () {
+      final response = getMockedResponse().copyWith(
+        method: 'POST',
+        request: {'TerminalPublicKey': 'plain-key-should-not-appear'},
+        encryptedRequest: {'cipherText': 'actual-encrypted-payload'},
+      );
+
+      final curl = response.toCurl();
+
+      expect(curl, contains('cipherText'));
+      expect(curl, contains('actual-encrypted-payload'));
+      expect(curl, isNot(contains('TerminalPublicKey')));
+      expect(curl, isNot(contains('plain-key-should-not-appear')));
+    },
+  );
+
+  test(
+    'toCurl should fall back to request body when the payload was not '
+    'encrypted',
+    () {
+      final response = getMockedResponse().copyWith(
+        method: 'POST',
+        request: {'foo': 'bar'},
+      );
+
+      final curl = response.toCurl();
+
+      expect(curl, contains('foo'));
+      expect(curl, contains('bar'));
+    },
+  );
 }
