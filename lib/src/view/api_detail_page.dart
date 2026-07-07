@@ -369,21 +369,21 @@ class _RequestTabState extends State<_RequestTab> {
         text: widget.apiResponse.toCurl(useEncrypted: _showEncrypted),
       ),
     );
-    final messenger = ScaffoldMessenger.of(context);
     // Hide any snackbar still animating out from a previous tap so the new
     // message (matching the just-copied body) shows immediately instead of
     // queuing behind it.
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          _showEncrypted
-              ? 'Copied cURL with encrypted body'
-              : 'Copied cURL with plain body',
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            _showEncrypted
+                ? 'Copied cURL with encrypted body'
+                : 'Copied cURL with plain body',
+          ),
+          duration: const Duration(seconds: 2),
         ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      );
   }
 
   Widget _renderJsonWidget(BuildContext context) {
