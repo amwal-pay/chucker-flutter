@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:chucker_flutter/src/helpers/sensitive_data_redactor.dart';
 import 'package:chucker_flutter/src/localization/localization.dart';
 import 'package:chucker_flutter/src/models/api_response.dart';
 import 'package:chucker_flutter/src/models/settings.dart';
@@ -26,18 +27,27 @@ class SharedPreferencesManager {
   static const String _kSettings = 'chucker_settings';
 
   ///[addApiResponse] sets an API response to local disk
+  /// Note: overlapping writes are not serialized. This singleton outlives
+  /// widget-test zones, so a chained write left pending by one test would
+  /// block every later one; for a debug-only inspector the occasional lost
+  /// entry under concurrent requests is the lesser evil.
   Future<void> addApiResponse(ApiResponse apiResponse) async {
+    final safeApiResponse =
+        SensitiveDataRedactor.redactApiResponse(apiResponse);
     final newResponses = List<ApiResponse>.empty(growable: true);
 
     final previousResponses = await getAllApiResponses();
 
-    if (previousResponses.length == ChuckerUiHelper.settings.apiThresholds) {
+    // `>=` rather than `==`: lowering the threshold in settings must shrink
+    // the store instead of letting it grow unbounded.
+    while (previousResponses.isNotEmpty &&
+        previousResponses.length >= ChuckerUiHelper.settings.apiThresholds) {
       previousResponses.removeAt(previousResponses.length - 1);
     }
 
     newResponses
       ..addAll(previousResponses)
-      ..add(apiResponse);
+      ..add(safeApiResponse);
 
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(

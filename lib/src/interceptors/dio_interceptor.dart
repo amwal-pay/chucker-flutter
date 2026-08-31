@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:chucker_flutter/src/helpers/constants.dart';
+import 'package:chucker_flutter/src/helpers/sensitive_data_redactor.dart';
 import 'package:chucker_flutter/src/helpers/shared_preferences_manager.dart';
 import 'package:chucker_flutter/src/models/api_response.dart';
 import 'package:chucker_flutter/src/view/helper/chucker_ui_helper.dart';
@@ -18,9 +19,14 @@ class ChuckerDioInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     _requestTime = DateTime.now();
-    // Preserve any pre-encryption body the datasource injected via Options.extra;
-    // otherwise snapshot whatever the body is at this point in the chain.
-    options.extra.putIfAbsent(_kChuckerOriginalBody, () => options.data);
+    // Preserve a pre-encryption body injected via Options.extra. Otherwise,
+    // snapshot whatever the body is at this point in the chain.
+    final originalBody = options.extra.containsKey(_kChuckerOriginalBody)
+        ? options.extra[_kChuckerOriginalBody]
+        : _separateFileObjects(options).data;
+    options.extra[_kChuckerOriginalBody] = SensitiveDataRedactor.redact(
+      originalBody,
+    );
     handler.next(options);
   }
 
@@ -38,7 +44,9 @@ class ChuckerDioInterceptor extends Interceptor {
 
     final method = response.requestOptions.method;
     final statusCode = response.statusCode ?? -1;
-    final path = response.requestOptions.path;
+    final path = SensitiveDataRedactor.redactText(
+      response.requestOptions.path,
+    );
 
     ChuckerUiHelper.showNotification(
       method: method,
@@ -66,7 +74,7 @@ class ChuckerDioInterceptor extends Interceptor {
     }
     final method = err.requestOptions.method;
     final statusCode = err.response?.statusCode ?? -1;
-    final path = err.requestOptions.path;
+    final path = SensitiveDataRedactor.redactText(err.requestOptions.path);
 
     ChuckerUiHelper.showNotification(
       method: method,

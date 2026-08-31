@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chucker_flutter/chucker_flutter.dart';
+import 'package:chucker_flutter/src/helpers/sensitive_data_redactor.dart';
 import 'package:chucker_flutter/src/helpers/shared_preferences_manager.dart';
 import 'package:chucker_flutter/src/view/helper/chucker_ui_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,7 +61,9 @@ void main() {
 
     expect(responses.length, 1);
     expect(responses.first.statusCode, 400);
-    expect(responses.first.body, mockedErrorResponse);
+    expect(responses.first.body, {
+      'email': SensitiveDataRedactor.redacted,
+    });
   });
 
   test('Request data should be intercepted when user calls onRequest',
@@ -70,7 +73,9 @@ void main() {
 
     final responses = await sharedPreferencesManager.getAllApiResponses();
     expect(responses.length, 1);
-    expect(responses.first.headers, {'my-token': 'token'});
+    expect(responses.first.headers, {
+      'my-token': SensitiveDataRedactor.redacted,
+    });
   });
 
   test('Response data should be accessible when user calls onResponse',
@@ -135,7 +140,7 @@ void main() {
     const prettyJson = '''
 [
      {
-          "key": "123"
+          "key": "[REDACTED]"
      },
      {
           "file": "a.png"

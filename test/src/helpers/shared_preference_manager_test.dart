@@ -156,6 +156,75 @@ void main() {
   });
 
   group('save api responses in shared preferences', () {
+    test('sensitive request and response data is redacted before storage',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final response = ApiResponse.mock().copyWith(
+        path: '/payments?token=path-token-fixture&operation=status',
+        headers: <String, dynamic>{
+          'Authorization': 'Bearer raw-access-token',
+          'X-Amwal-Signature': 'raw-request-signature',
+          'SerialNumber': 'POS-000001',
+          'Content-Type': 'application/json',
+        },
+        queryParameters: <String, dynamic>{
+          'merchantId': 'merchant-fixture',
+          'access_token': 'query-token-fixture',
+          'page': 2,
+        },
+        request: <String, dynamic>{
+          'payment': <String, dynamic>{
+            'pinBlock': 'pin-fixture',
+            'pan': '4111111111111111',
+            'track2Data': 'track-fixture',
+            'amount': '42.000',
+          },
+          'operation': 'purchase',
+        },
+        body: <String, dynamic>{
+          'tmk': '00112233445566778899AABBCCDDEEFF',
+          'authCode': 'auth-fixture',
+          'status': 'approved',
+        },
+        encryptedRequest: <String, dynamic>{
+          'cipherText': 'ciphertext-fixture',
+          'cipherKey': 'cipherkey-fixture',
+        },
+      );
+
+      await sharedPreferencesManager.addApiResponse(response);
+
+      final preferences = await SharedPreferences.getInstance();
+      final rawStorage = preferences.getString('api_responses')!;
+      expect(rawStorage, isNot(contains('raw-access-token')));
+      expect(rawStorage, isNot(contains('path-token-fixture')));
+      expect(rawStorage, isNot(contains('raw-request-signature')));
+      expect(rawStorage, isNot(contains('POS-000001')));
+      expect(rawStorage, isNot(contains('merchant-fixture')));
+      expect(rawStorage, isNot(contains('query-token-fixture')));
+      expect(rawStorage, isNot(contains('pin-fixture')));
+      expect(rawStorage, isNot(contains('track-fixture')));
+      expect(rawStorage, isNot(contains('ciphertext-fixture')));
+      expect(rawStorage, isNot(contains('cipherkey-fixture')));
+      expect(rawStorage, isNot(contains('auth-fixture')));
+      expect(rawStorage, isNot(contains('4111111111111111')));
+      expect(rawStorage, isNot(contains('00112233445566778899AABBCCDDEEFF')));
+
+      final saved =
+          (await sharedPreferencesManager.getAllApiResponses()).single;
+      expect(saved.headers['Authorization'], '[REDACTED]');
+      expect(saved.path, isNot(contains('path-token-fixture')));
+      expect(saved.path, contains('token=[REDACTED]'));
+      expect(saved.headers['X-Amwal-Signature'], '[REDACTED]');
+      expect(saved.headers['SerialNumber'], '[REDACTED]');
+      expect(saved.queryParameters['merchantId'], '[REDACTED]');
+      expect(saved.queryParameters['access_token'], '[REDACTED]');
+      // ApiResponse's legacy JSON model normalizes query scalars to strings.
+      expect(saved.queryParameters['page'], '2');
+      expect((saved.request as Map<String, dynamic>)['operation'], 'purchase');
+      expect((saved.body as Map<String, dynamic>)['status'], 'approved');
+    });
+
     test(
         'data should be saved in shared preferences when addApiResponse called',
         () async {

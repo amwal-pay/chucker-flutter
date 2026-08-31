@@ -70,7 +70,7 @@ void main() {
 
     expect(responses.length, 1);
     expect(responses.first.statusCode, 400);
-    expect(responses.first.body, mockedErrorResponse);
+    expect(responses.first.body, const {'email': '[REDACTED]'});
   });
 
   test(
@@ -101,7 +101,7 @@ void main() {
     const prettyJson = '''
 [
      {
-          "key": "123"
+          "key": "[REDACTED]"
      },
      {
           "file": "a.png"
